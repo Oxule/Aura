@@ -1,5 +1,8 @@
 *.log
 
+app/android/.idea
+.idea/*
+
 # OSX
 #
 .DS_Store
