@@ -120,7 +120,7 @@ export const messagesAtom = atom(
                 });
 
                 try {
-                    await db.execute(
+                    db.execute(
                         'INSERT OR REPLACE INTO messages (hash, contact, content, sent_time, arrive_time, read, incoming, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                         [msg.hash, msg.contact, msg.content, msg.sent_time, msg.arrive_time, msg.read ? 1 : 0, msg.incoming ? 1 : 0, msg.status]
                     );
@@ -143,7 +143,7 @@ export const messagesAtom = atom(
                 }
 
                 try {
-                    await db.execute('UPDATE messages SET read = 1 WHERE hash = ?', [hash]);
+                    db.execute('UPDATE messages SET read = 1 WHERE hash = ?', [hash]);
                 } catch (e) {
                     set(messagesStoreAtom, previousStore);
                 }
@@ -170,7 +170,7 @@ export const messagesAtom = atom(
                 }
 
                 try {
-                    await db.execute('UPDATE messages SET read = 1 WHERE contact = ? AND incoming = 1', [contact]);
+                    db.execute('UPDATE messages SET read = 1 WHERE contact = ? AND incoming = 1', [contact]);
                 } catch (e) {
                     set(messagesStoreAtom, previousStore);
                 }
@@ -183,7 +183,7 @@ export const messagesAtom = atom(
                     const { [contact]: _, ...remainingStore } = previousStore;
                     set(messagesStoreAtom, remainingStore);
                     try {
-                        await db.execute('DELETE FROM messages WHERE contact = ?', [contact]);
+                        db.execute('DELETE FROM messages WHERE contact = ?', [contact]);
                     } catch (e) {
                         set(messagesStoreAtom, previousStore);
                     }
@@ -194,7 +194,7 @@ export const messagesAtom = atom(
                         set(messagesStoreAtom, { ...previousStore, [contact]: { messages: remainingMsgs } });
                     }
                     try {
-                        await db.execute('DELETE FROM messages WHERE hash = ?', [hash]);
+                        db.execute('DELETE FROM messages WHERE hash = ?', [hash]);
                     } catch (e) {
                         set(messagesStoreAtom, previousStore);
                     }
@@ -205,7 +205,7 @@ export const messagesAtom = atom(
             case 'wipe': {
                 set(messagesStoreAtom, {});
                 try {
-                    await db.execute('DELETE FROM messages');
+                    db.execute('DELETE FROM messages');
                 } catch (e) {
                     set(messagesStoreAtom, previousStore);
                 }
