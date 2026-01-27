@@ -11,14 +11,18 @@
 
 **AURA** is a decentralized messenger leveraging **Nearby Connections** technology to create robust mesh networks. It thrives where the internet fails, bypassing censorship and eliminating central points of failure.
 
+<p align="center">
+  <img src="media/mockup_main.png" alt="Mockup">
+</p>
+
 ---
 
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="screenshot-1.png" width="250" alt="Chat Screen">
-  <img src="screenshot-2.png" width="250" alt="Aura Profile">
-  <img src="screenshot-3.png" width="250" alt="Network Mesh">
+   <img src="media/scr/1.png" width="250" alt="Home Screen">
+   <img src="media/scr/3.png" width="250" alt="Direct Chat Screen">
+   <img src="media/scr/4.png" width="250" alt="AURA Profile">
 </p>
 
 ---
