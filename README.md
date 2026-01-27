@@ -8,6 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Alpha](https://img.shields.io/badge/Status-Alpha-orange.svg)]()
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)]()
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 **AURA** is a decentralized messenger leveraging **Nearby Connections** technology to create robust mesh networks. It thrives where the internet fails, bypassing censorship and eliminating central points of failure.
 
@@ -40,8 +41,28 @@
 
 ## 🛠 Tech Stack
 
-> empty
+### 📱 Frontend (Mobile)
 
+* **Framework:** [React Native 0.83.1](https://reactnative.dev/)
+* **State Management:** [Jotai](https://jotai.org/) + `jotai-family`
+* **Navigation:** React Navigation 7
+
+### ⚙️ Native Layer (Android)
+
+* **Language:** Kotlin + Coroutines
+* **Networking:** [Google Nearby Connections](https://developers.google.com/nearby/connections/overview) (The core of local P2P mesh)
+* **Geolocation:** Play Services Location (For proximity-based node discovery)
+
+### 🔐 Security & Cryptography
+
+* **Engine:** [Bouncy Castle](https://www.bouncycastle.org/) (Industrial-grade crypto provider)
+* **PoW:** Argon2 (via Signal implementation).
+* **Storage:** [op-sqlite](https://github.com/OP-Engineering/op-sqlite)
+
+### 📸 Utilities
+
+* **Camera:** Vision Camera 4 (For scanning contact QR codes)
+* **QR Generation:** React Native QR Code SVG.
 ---
 
 ## 🏗 How It Works (Architecture)
@@ -65,6 +86,9 @@ AURA utilizes a unique Dual Ledger system to balance local speed with global rea
 2. **Global Ledger (L2):** *(In Development)*
     - Messages can reach Global Nodes (Gateways) if any peer in the mesh gains internet access.
     - Enables worldwide communication while maintaining anonymity through ledger mixing.
+
+> [!TIP]
+> **Deep dive into the protocol:** Read the full technical specification in [AURANET.md](AURANET.md)
 
 ---
 
@@ -95,5 +119,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 <p align="center">
-  Made with ❤️ for a free world and freedom.
+  Made with ❤️ for a free world and digital sovereignty.
 </p>
