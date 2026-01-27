@@ -114,7 +114,7 @@ This project is currently in the **Alpha** stage. Contributions are more than we
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the GNU GPL V3 License. See [LICENSE](LICENSE) for more information.
 
 ---
 
