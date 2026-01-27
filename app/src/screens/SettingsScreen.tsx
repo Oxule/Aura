@@ -7,7 +7,7 @@ import {
     View,
     LayoutAnimation,
     Platform,
-    UIManager
+    UIManager, Button
 } from 'react-native';
 import {getAllLanguages, useTranslation} from "../translations/translations.ts";
 import { useNavigation } from "@react-navigation/core";
@@ -112,6 +112,8 @@ export default function SettingsScreen() {
                     )}
                 </View>
             </View>
+
+            {/*<Button title={"Debug"} onPress={()=>nav.navigate("Debug")}/>*/}
         </SafeAreaView>
     );
 }

@@ -165,9 +165,7 @@ export default function HomeScreen() {
                     </View>
                     </TouchableOpacity>
             </Header>
-
-            {/*<Button title={"Debug"} onPress={()=>nav.navigate("Debug")}/>*/}
-
+            
             <FlatList
                 //@ts-ignore
                 data={chats}

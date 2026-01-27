@@ -1,15 +1,23 @@
 import Svg, {Defs, G, LinearGradient, Path, Stop} from 'react-native-svg';
 import randomIcons, {parseSvgContent} from "../components/randomIcons.tsx";
-import {ScrollView, useColorScheme, View} from "react-native";
+import {Button, ScrollView, useColorScheme, View} from "react-native";
 import Aura from "../components/Aura.tsx";
 import React from "react";
 import {DEEPLINK_PREFIX} from "../deeplink.ts";
 import SmartDataShare from "../components/SmartDataShare.tsx";
+import {loadMockData} from "../storage/mock.ts";
+import {useAtom} from "jotai/react";
+import {messagesAtom} from "../storage/messages.ts";
+import {contactsAtom} from "../storage/contacts.ts";
 
 export default function DebugScreen() {
     const colorScheme = useColorScheme()
 
+    const [contacts, dispatchContacts] = useAtom(contactsAtom);
+    const [_, dispatchMessages] = useAtom(messagesAtom);
+
     return <>
+        <Button title={"Load mock"} onPress={()=>loadMockData(dispatchContacts, dispatchMessages)}/>
         {/*<Aura animate={true} theme={colorScheme} publicKey={"test"}/>
         <Aura animate={false} theme={colorScheme} publicKey={"testa"}/>*/}
         <ScrollView
