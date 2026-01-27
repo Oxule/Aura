@@ -95,7 +95,7 @@ export default function MessagesList({pubkey, accent, color}:{pubkey: string, ac
                         <Text style={{ fontSize: 12 }}> </Text>
 
                         <View style={styles.timeContainer}>
-                            <Text style={[styles.timeText, { color: col + "90" }]}>
+                            <Text style={[styles.timeText, { color: col, opacity: 0.7}]}>
                                 {new Date(item.sent_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Text>
                             {renderStatusIcon()}

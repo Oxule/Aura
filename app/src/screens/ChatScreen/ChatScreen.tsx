@@ -26,12 +26,16 @@ import AuraComp from '../../components/Aura.tsx';
 import {sha256} from "js-sha256";
 import MessagesList from "./MessagesList.tsx";
 import Send from "./Send.tsx";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {KeyboardGestureArea, KeyboardStickyView} from "react-native-keyboard-controller";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 export default function ChatScreen({ route }: Props) {
 
     const theme = useATheme();
+
+    const insets = useSafeAreaInsets();
 
     const [contacts, addContact] = useContacts()
 
@@ -80,7 +84,7 @@ export default function ChatScreen({ route }: Props) {
     const accent = `hsla(${hue}, 64%, 58%, 1)`
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.backgroundColor}}>
             <ContactOptionsModal
                 isVisible={isOptionsVisible}
                 onClose={() => setOptionsVisible(false)}
@@ -116,17 +120,26 @@ export default function ChatScreen({ route }: Props) {
                 theme={theme}
             />}
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
-                style={{ flex: 1 }}
-            >
-                <MessagesList pubkey={route.params.publicKey} color={text} accent={accent}/>
+            <KeyboardGestureArea style={{ flex: 1 }}>
+                <MessagesList
+                    pubkey={route.params.publicKey}
+                    color={text}
+                    accent={accent}
+                />
+            </KeyboardGestureArea>
 
-                {canSend &&
-                    <Send accent={accent} pubkey={route.params.publicKey} color={text} bits={contact.pow}/>
-                }
-            </KeyboardAvoidingView>
+            {canSend && (
+                <KeyboardStickyView offset={{ closed: insets.bottom, opened: 0 }}>
+                    <View style={{ backgroundColor: theme.backgroundColor }}>
+                        <Send
+                            accent={accent}
+                            pubkey={route.params.publicKey}
+                            color={text}
+                            bits={contact.pow}
+                        />
+                    </View>
+                </KeyboardStickyView>
+            )}
         </SafeAreaView>
     );
 }

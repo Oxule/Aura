@@ -27,7 +27,7 @@
 
 * **🌐 Offline Mesh:** Powered by Bluetooth and Wi-Fi Direct. Messages hop from device to device seamlessly.
 * **🎭 The Aura:** A unique digital identity concept. Your specific color, icon, and behavior patterns form your "Aura" within the network.
-* **🔐 Total Privacy:** * End-to-End (E2E) encryption for all data.
+* **🔐 Total Privacy:** End-to-End (E2E) encryption for all data.
     * Complete anonymity: messages are injected into a shared distributed ledger without sender or recipient metadata.
 * **🛡 Flood Protection:** Smart architecture designed to mitigate "Blackhole" and flood-based attacks.
 * **🎨 Modern UI/UX:** A smooth, intuitive interface that bridges the gap between high security and everyday usability.

@@ -90,6 +90,7 @@ class Module(
 
                     val intent = Intent(ACTION_SEND_MESSAGE).apply {
                         putExtra("data", base64Result)
+                        setPackage(reactApplicationContext.packageName)
                     }
                     reactApplicationContext.sendBroadcast(intent)
 
@@ -123,6 +124,7 @@ class Module(
 
                     val intent = Intent(ACTION_SEND_MESSAGE).apply {
                         putExtra("data", base64Result)
+                        setPackage(reactApplicationContext.packageName)
                     }
                     reactApplicationContext.sendBroadcast(intent)
                     promise.resolve(true)
