@@ -1,5 +1,7 @@
 *.log
 
+*.keystore
+
 app/android/.idea
 .idea/*
 
