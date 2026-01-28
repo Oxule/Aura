@@ -62,6 +62,9 @@ Every bucket has hash, calculated from concatenation of every entry, sorted by h
 
 1024 buckets forms static Merkle-Tree for easy sync. It doesn't require full tree rebuild after append, only one branch. 
 
+But actually, we're not going to use full Merkle-Tree, only principle. So, all 1024 buckets can be grouped by 8 (128 groups), we call it `optimisation_level`. Every group is a node that have hash, calculated from concatenation of all bucket hashes.
+And then, every optimisation layer's group's hashes concatenated and hashed together, that forms `root_hash`
+
 ## 3. Structures
 > Every binary structure or packet is in **Big-Endian**
 
@@ -144,4 +147,87 @@ Used later in X25519 `shared_secret` extraction.
 
 
 ## 4. Sync
-> WIP
+
+Synchronization in AURANET is a multi-stage, reactive process designed to minimize Round-Trip Time (RTT) and bandwidth usage. It uses a "Push-Pull" hybrid model where nodes first exchange compressed state snapshots and then perform targeted data resolution.
+
+### 4.1. Sync Packet Structure
+
+All synchronization data is encapsulated in a `SyncPacket`:
+
+```
+[flags(1)] <body>
+
+```
+
+`flags` byte structure:
+
+```
+0-3(4) bits - packet_type:
+    0x00: MESSAGE (Raw message propagation)
+    0x01: START (Initial state announcement)
+    0x02: DIFF (Mismatched groups and detailed hashes)
+    0x03: FINE (Targeted bucket request)
+4-5(2) bits - registry_type:
+    0b00: LOCAL (Local Ledger)
+    0b01: GLOBAL (Global Ledger)
+6-7(2) bits - reserved
+
+```
+
+### 4.2. Sync Workflow
+
+#### Phase 1: Announcement (START)
+
+The initiator (usually the **Submissive** node) sends a `START` packet containing the `optimisation_level` hashes.
+
+```
+<body> = [group_hashes(128 * 2)]
+
+```
+
+* `group_hashes`: 128 entries of 2-byte truncated hashes, each representing a group of 8 buckets.
+
+#### Phase 2: Differential Analysis (DIFF)
+
+The receiver compares the remote `group_hashes` with its own. If discrepancies are found, it responds with a `DIFF` packet. This packet is "heavy" as it includes both the bitmask of mismatched groups and the detailed bucket hashes for those groups.
+
+```
+<body> = [mask(16)] [bucket_hashes(N * 8 * 2)]
+
+```
+
+* `mask`: 128 bits where `1` indicates a mismatched group index.
+* `bucket_hashes`: For every `1` in the mask, the packet includes 8 detailed 2-byte bucket hashes (N is the number of set bits in the mask).
+
+#### Phase 3: Resolution (MESSAGE & FINE)
+
+The initiator receives the `DIFF` packet and performs two actions simultaneously:
+
+1. **Push**: For every bucket where the initiator has data and the receiver's hash differs, the initiator sends `MESSAGE` packets.
+2. **Pull**: For every bucket where the initiator’s hash differs (and it might be missing data), it sends a `FINE` packet acting as a "shopping list".
+
+```
+<body> = [bucket_indices(M * 2)]
+
+```
+
+* `bucket_indices`: M entries of 2-byte Unsigned Shorts representing specific bucket IDs (0-1023) that the initiator wants to receive from the remote node.
+
+#### Phase 4: Final Response
+
+The remote node receives the `FINE` packet and immediately sends `MESSAGE` packets for all requested bucket indices.
+
+### 4.3. Propagation (Gossip)
+
+When a node receives a `MESSAGE` packet (type `0x00`) and validates its PoW and Signature/Integrity:
+
+* If the message is new to the Ledger, the node MUST propagate it to all other connected nodes, except the one it received the message from.
+* This ensures "Epidemic" spreading of data across the mesh.
+
+### 4.4. Optimization Level Recalculation
+
+To maintain sync efficiency, nodes MUST recalculate bucket hashes and group hashes (`optimisation_level`) whenever:
+
+1. A new valid message is appended to a bucket.
+2. The TTL of messages in a bucket expires, causing their removal.
+3. A sync session is initiated (to ensure the `START` packet is up-to-date).

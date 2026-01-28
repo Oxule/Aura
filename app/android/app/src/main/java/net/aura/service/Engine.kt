@@ -23,18 +23,13 @@ import net.aura.proto.BUCKET_COUNT
 import net.aura.proto.Event
 import net.aura.proto.MessageRegistries
 import net.aura.proto.RawMessage
+import net.aura.proto.SyncPacket
 import net.aura.proto.toHex
 import java.nio.ByteBuffer
 import kotlin.collections.remove
 import kotlin.random.Random
 import kotlin.random.nextUInt
 import kotlin.text.set
-
-private const val OPCODE_MESSAGE: Byte = 0
-private const val OPCODE_REGISTRY_COARSE: Byte = 1
-private const val OPCODE_REGISTRY_COARSE_RESPONSE: Byte = 2
-private const val OPCODE_REGISTRY_FINE: Byte = 3
-private const val OPCODE_REGISTRY_FINE_RESPONSE: Byte = 4
 
 private val SERVICE_ID = "net.aura"
 
@@ -79,16 +74,14 @@ class Engine (val context: Context) {
 
             MessageRegistries.saveAll(context)
 
-            val payload = ByteBuffer.allocate(msg.fullData.size + 1)
-            payload.put(OPCODE_MESSAGE)
-            payload.put(msg.fullData)
+            val payload = SyncPacket.packMessage(msg)
 
             val targetCount = activeConnections.size
             if (targetCount == 0) {
                 Log.w("AURA_DEBUG", "No active connections to propagate message!")
             }
 
-            val pl = Payload.fromBytes(payload.array())
+            val pl = Payload.fromBytes(payload.buffer.array())
 
             for (conn in activeConnections) {
                 if (from != null && conn.key == from) continue
@@ -156,215 +149,6 @@ class Engine (val context: Context) {
 
 
 
-    //protocol sync
-
-    private fun sendMessage(msg: RawMessage, endpoint: String) {
-        val payload = ByteBuffer.allocate(msg.fullData.size + 1)
-        payload.put(OPCODE_MESSAGE)
-        payload.put(msg.fullData)
-
-        Log.v("AURA_DEBUG", "-> SEND_MESSAGE to $endpoint (${msg.fullData.size} bytes)")
-        connectionsClient.sendPayload(endpoint, Payload.fromBytes(payload.array()))
-    }
-
-    private fun sendCoarseRegistry(endpoint: String) {
-        Log.d("AURA_DEBUG", "Step 1: Initiating sync with $endpoint (sending COARSE)")
-        val buffer = ByteBuffer.allocate(1 + BUCKET_COUNT / 2)
-        buffer.put(OPCODE_REGISTRY_COARSE)
-
-        val localOpt = MessageRegistries.local.optimisationLevel
-        for (i in 0 until BUCKET_COUNT / 8) {
-            buffer.put(localOpt[i], 0, 2)
-        }
-        val globalOpt = MessageRegistries.global.optimisationLevel
-        for (i in 0 until BUCKET_COUNT / 8) {
-            buffer.put(globalOpt[i], 0, 2)
-        }
-
-        connectionsClient.sendPayload(endpoint, Payload.fromBytes(buffer.array()))
-            .addOnSuccessListener { Log.d("AURA_DEBUG", "Sent coarse registry to $endpoint.") }
-    }
-
-    private fun processCoarseRegistry(endpoint: String, bytes: ByteArray) {
-        Log.d("AURA_DEBUG", "Step 2: Received COARSE from $endpoint (${bytes.size} bytes)")
-        if (bytes.size != 1 + BUCKET_COUNT / 2) {
-            Log.e("AURA_DEBUG", "Coarse registry size mismatch: ${bytes.size}")
-            return
-        }
-
-        val buffer = ByteBuffer.wrap(bytes)
-        buffer.get() // Skip OPCODE
-
-        val diffLocal = mutableListOf<Byte>()
-        val diffGlobal = mutableListOf<Byte>()
-        val groupCount = BUCKET_COUNT / 8
-
-        for (i in 0 until groupCount) {
-            val localH = MessageRegistries.local.optimisationLevel[i]
-            val r1 = buffer.get()
-            val r2 = buffer.get()
-            if (localH[0] != r1 || localH[1] != r2) {
-                diffLocal.add(i.toByte())
-            }
-        }
-        for (i in 0 until groupCount) {
-            val localH = MessageRegistries.global.optimisationLevel[i]
-            val r1 = buffer.get()
-            val r2 = buffer.get()
-            if (localH[0] != r1 || localH[1] != r2) {
-                diffGlobal.add(i.toByte())
-            }
-        }
-
-        Log.d("AURA_DEBUG", "   Diff groups found: Local=${diffLocal.size}, Global=${diffGlobal.size}")
-
-        if (diffLocal.isEmpty() && diffGlobal.isEmpty()) {
-            Log.d("AURA_DEBUG", "Registry synced with $endpoint (No diff)")
-            return
-        }
-
-        val out = ByteBuffer.allocate(2 + diffLocal.size + diffGlobal.size)
-        out.put(OPCODE_REGISTRY_COARSE_RESPONSE)
-        out.put(diffLocal.size.toByte())
-        diffLocal.forEach { out.put(it) }
-        diffGlobal.forEach { out.put(it) }
-
-        Log.d("AURA_DEBUG", "-> Sending COARSE_RESPONSE (Requesting FINE for ${diffLocal.size + diffGlobal.size} groups)")
-        connectionsClient.sendPayload(endpoint, Payload.fromBytes(out.array()))
-    }
-
-    private fun processBucketRequest(endpoint: String, bytes: ByteArray) {
-        val buffer = ByteBuffer.wrap(bytes)
-        buffer.get() // Skip OPCODE
-
-        val localCount = buffer.get().toInt() and 0xFF
-        val globalCount = bytes.size - 2 - localCount
-
-        Log.d("AURA_DEBUG", "Step 3: Received COARSE_RESPONSE. Remote wants FINE for L:$localCount, G:$globalCount")
-
-        val out = ByteBuffer.allocate(3 + (localCount + globalCount) * 17)
-        out.put(OPCODE_REGISTRY_FINE)
-        out.put(localCount.toByte())
-        out.put(globalCount.toByte())
-
-        repeat(localCount) {
-            val gIdx = buffer.get().toInt() and 0xFF
-            out.put(gIdx.toByte())
-            repeat(8) { j -> out.put(MessageRegistries.local.buckets[gIdx * 8 + j].hash, 0, 2) }
-        }
-        repeat(globalCount) {
-            val gIdx = buffer.get().toInt() and 0xFF
-            out.put(gIdx.toByte())
-            repeat(8) { j -> out.put(MessageRegistries.global.buckets[gIdx * 8 + j].hash, 0, 2) }
-        }
-
-        Log.d("AURA_DEBUG", "-> Sending FINE data to $endpoint")
-        connectionsClient.sendPayload(endpoint, Payload.fromBytes(out.array()))
-    }
-
-    private fun processBuckets(endpoint: String, bytes: ByteArray) {
-        val buffer = ByteBuffer.wrap(bytes)
-        if (buffer.remaining() < 3) return
-
-        buffer.get() // Skip OPCODE
-        val localGroupCount = buffer.get().toInt() and 0xFF
-        val globalGroupCount = buffer.get().toInt() and 0xFF
-
-        Log.d("AURA_DEBUG", "Step 4: Received FINE. Comparing L-Groups:$localGroupCount, G-Groups:$globalGroupCount")
-
-        val diffLocal = mutableListOf<Int>()
-        val diffGlobal = mutableListOf<Int>()
-
-        repeat(localGroupCount) {
-            if (buffer.remaining() >= 17) {
-                val gIdx = buffer.get().toInt() and 0xFF
-                repeat(8) { j ->
-                    val bIdx = gIdx * 8 + j
-                    val h = MessageRegistries.local.buckets[bIdx].hash
-                    val r1 = buffer.get()
-                    val r2 = buffer.get()
-                    if (h[0] != r1 || h[1] != r2) diffLocal.add(bIdx)
-                }
-            }
-        }
-
-        repeat(globalGroupCount) {
-            if (buffer.remaining() >= 17) {
-                val gIdx = buffer.get().toInt() and 0xFF
-                repeat(8) { j ->
-                    val bIdx = gIdx * 8 + j
-                    val h = MessageRegistries.global.buckets[bIdx].hash
-                    val r1 = buffer.get()
-                    val r2 = buffer.get()
-                    if (h[0] != r1 || h[1] != r2) diffGlobal.add(bIdx)
-                }
-            }
-        }
-
-        Log.d("AURA_DEBUG", "   Specific diff buckets: Local=${diffLocal.size}, Global=${diffGlobal.size}")
-
-        if (diffLocal.isEmpty() && diffGlobal.isEmpty()) {
-            Log.d("AURA_DEBUG", "   No bucket diffs found after FINE analysis.")
-            return
-        }
-
-        val out = ByteBuffer.allocate(3 + (diffLocal.size + diffGlobal.size) * 2)
-        out.put(OPCODE_REGISTRY_FINE_RESPONSE)
-        out.putShort(diffLocal.size.toShort())
-        diffLocal.forEach { out.putShort(it.toShort()) }
-        diffGlobal.forEach { out.putShort(it.toShort()) }
-
-        Log.d("AURA_DEBUG", "-> Sending FINE_RESPONSE (Requesting messages from ${diffLocal.size + diffGlobal.size} buckets)")
-        connectionsClient.sendPayload(endpoint, Payload.fromBytes(out.array()))
-
-        var sentCount = 0
-        for (bIdx in diffLocal) {
-            val bucket = MessageRegistries.local.buckets[bIdx]
-            bucket.messages.forEach {
-                sendMessage(it.msg, endpoint)
-                sentCount++
-            }
-        }
-        for (bIdx in diffGlobal) {
-            val bucket = MessageRegistries.global.buckets[bIdx]
-            bucket.messages.forEach {
-                sendMessage(it.msg, endpoint)
-                sentCount++
-            }
-        }
-        Log.d("AURA_DEBUG", "-> Also Pushed $sentCount local messages for diverging buckets.")
-    }
-
-    private fun processBucketsDiff(endpoint: String, bytes: ByteArray) {
-        val buffer = ByteBuffer.wrap(bytes)
-        buffer.get() // Skip OPCODE
-
-        val localCount = buffer.short.toInt() and 0xFFFF
-        Log.d("AURA_DEBUG", "Step 5: Received FINE_RESPONSE from $endpoint. Preparing to send missing messages.")
-
-        val targetBuckets = ArrayList<Pair<Int, Boolean>>(bytes.size / 2)
-        repeat(localCount) {
-            targetBuckets.add(buffer.short.toInt() to true)
-        }
-        while (buffer.hasRemaining()) {
-            targetBuckets.add(buffer.short.toInt() to false)
-        }
-
-        var totalMsgsSent = 0
-        for ((bIdx, isLocal) in targetBuckets) {
-            val bucket = if (isLocal) MessageRegistries.local.buckets[bIdx]
-            else MessageRegistries.global.buckets[bIdx]
-
-            bucket.messages.forEach {
-                sendMessage(it.msg, endpoint)
-                totalMsgsSent++
-            }
-        }
-        Log.d("AURA_DEBUG", "Final Step: Sent $totalMsgsSent messages to $endpoint to complete sync.")
-    }
-
-
-
     //callbacks
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
@@ -398,8 +182,11 @@ class Engine (val context: Context) {
                 activeConnections[endpointId] = ConnectionData()
                 onActiveConnectionsChange(activeConnections)
                 if (isSubmissiveByEndpoint(endpointId)) {
-                    Log.d("AURA_DEBUG", "Submissive. Sending coarse registry")
-                    sendCoarseRegistry(endpointId)
+                    Log.d("AURA_DEBUG", "Submissive. Sending sync start")
+                    connectionsClient.sendPayload(endpointId,
+                        Payload.fromBytes(SyncPacket.packSyncStart(true).buffer.array()))
+                    connectionsClient.sendPayload(endpointId,
+                        Payload.fromBytes(SyncPacket.packSyncStart(false).buffer.array()))
                 }
             } else {
                 Log.e("AURA_DEBUG", "[CONNECTION]: ${result.status}")
@@ -421,28 +208,8 @@ class Engine (val context: Context) {
                     val bytes = payload.asBytes() ?: return
                     if (bytes.isEmpty()) return
 
-                    Log.d(
-                        "AURA_DEBUG",
-                        "RAW_RECEIVE: From $endpointId, OpCode=${bytes[0]}, Size=${bytes.size}"
-                    )
-
-                    when (bytes[0]) {
-                        OPCODE_MESSAGE -> {
-                            if (bytes.size > 1) {
-                                val msgBytes = ByteArray(bytes.size - 1)
-                                System.arraycopy(bytes, 1, msgBytes, 0, bytes.size - 1)
-                                MessageRegistries.processMessage(
-                                    RawMessage.fromBytes(msgBytes),
-                                    endpointId
-                                )
-                            }
-                        }
-
-                        OPCODE_REGISTRY_COARSE -> processCoarseRegistry(endpointId, bytes)
-                        OPCODE_REGISTRY_COARSE_RESPONSE -> processBucketRequest(endpointId, bytes)
-                        OPCODE_REGISTRY_FINE -> processBuckets(endpointId, bytes)
-                        OPCODE_REGISTRY_FINE_RESPONSE -> processBucketsDiff(endpointId, bytes)
-                    }
+                    SyncPacket(bytes).process(endpointId).forEach { connectionsClient.sendPayload(endpointId,
+                        Payload.fromBytes(it.buffer.array())) }
                 }
             }
             catch (e: Error){

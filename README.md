@@ -16,8 +16,6 @@
   <img src="media/mockup_main.png" alt="Mockup">
 </p>
 
----
-
 ## 📸 Screenshots
 
 <p align="center">
