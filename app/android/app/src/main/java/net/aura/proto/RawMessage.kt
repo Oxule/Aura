@@ -89,7 +89,7 @@ class RawMessage(
     fun isValid(pow: Int): Boolean{
         Log.d("AURA_DEBUG", "Message type: ${type()}")
 
-        if(time() < System.currentTimeMillis() + 500){
+        if(time() > System.currentTimeMillis() + 500){
             return false;
         }
 

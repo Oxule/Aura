@@ -98,11 +98,11 @@ class MessageRegistry {
         rootHash = digest.digest()
     }
 
-    fun clean(){
-        for (b in buckets){
-            for (i in (0..b.messages.size).reversed()){
+    fun clean() {
+        for (b in buckets) {
+            for (i in b.messages.size - 1 downTo 0) {
                 val pow = b.messages[i].msg.pow()
-                if(!b.messages[i].msg.isValid(pow)){
+                if (!b.messages[i].msg.isValid(pow)) {
                     b.messages.removeAt(i)
                     b.isDirty = true
                 }
