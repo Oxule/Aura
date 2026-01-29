@@ -15,7 +15,7 @@ object NodeAdvMessage {
         if(pow < PowEngine.NODE_ADV_BITS){
             return true
         }
-        val ttlMs = 1000*60*60*8 //8 hours
+        val ttlMs = 1000*60*60*24*7 //1 week
         val expirationTime = message.time() + ttlMs
 
         return expirationTime < System.currentTimeMillis()

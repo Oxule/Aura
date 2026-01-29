@@ -39,7 +39,7 @@ object PowEngine {
     const val BROADCAST_LOCAL_BITS = 10
     const val BROADCAST_GLOBAL_BITS = 14
 
-    const val NODE_ADV_BITS = 20
+    const val NODE_ADV_BITS = 22
 
 
 
