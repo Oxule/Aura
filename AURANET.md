@@ -33,6 +33,11 @@ Direct message is a message, that sent by some User to another User.
 
 Direct message is fully encrypted, anonymous and end-to-end.
 
+### Global Node Advertisement Message
+The way, global node can tell, that it's exists, is by sending advertisement message about this in global ledger.
+
+Global Node Advertisement Message contains IP (v4/v6) address and port.
+
 ### Node
 Node is an abstract Ledger holder. Node can connect to another nodes, sync their Ledgers and send Messages. 
 
@@ -145,6 +150,12 @@ Used later in X25519 `shared_secret` extraction.
 
 `sign` is 64 bytes Ed25519 sign of message (preceding bytes: from `flags` to `content` included).
 
+### `0x02`: **NODE_ADV** message
+```
+[ip(4|16)] [port(2)]
+```
+
+Everything here is self-describing, but I should notice, that IP version stores in `flags` byte by this mask: `0b00010000`. Bit's value means "Is IPv6?". This means, 0b00000000 means it's v4. 
 
 ## 4. Sync
 

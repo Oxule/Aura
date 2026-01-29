@@ -37,6 +37,7 @@ class SyncPacket(val buffer: ByteBuffer) {
             buffer.put(SYNC_PACKET_FLAGS_TYPE_START or (if (global) SYNC_PACKET_FLAGS_REGISTRY_GLOBAL else SYNC_PACKET_FLAGS_REGISTRY_LOCAL))
             val reg = if (global) MessageRegistries.global else MessageRegistries.local
             reg.recalculate()
+            reg.clean()
             for (i in 0 until 128) buffer.put(reg.optimisationLevel[i], 0, 2)
             buffer.flip()
             return SyncPacket(buffer)

@@ -58,11 +58,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: app/android/app/build/outputs/apk/release/aura.apk
-          name: AURA Release ${{ github.ref_name }}
+          name: AURA ${{ github.ref_name }}
           tag_name: ${{ github.ref }}
           body: |
-            ## AURA ${{ github.ref_name }}
-            
             *Made with ❤️ for a free world and digital sovereignty.*
           draft: false
           prerelease: false

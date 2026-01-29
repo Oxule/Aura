@@ -39,6 +39,8 @@ object PowEngine {
     const val BROADCAST_LOCAL_BITS = 10
     const val BROADCAST_GLOBAL_BITS = 14
 
+    const val NODE_ADV_BITS = 20
+
 
 
     private val argon2 = Argon2.Builder(Version.V13)

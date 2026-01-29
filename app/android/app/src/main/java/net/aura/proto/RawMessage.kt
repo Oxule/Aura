@@ -43,14 +43,17 @@ class RawMessage(
             val rawMessage = RawMessage(bytes)
 
             val t = rawMessage.type()
-            if(t == MSG_FLAGS_TYPE_DIRECT){
-                require(bytes.size > MSG_DIRECT_MIN_LENGTH) {"Direct message is too small: ${bytes.size} of ${MSG_DIRECT_MIN_LENGTH+1}"}
-            }
-            else if(t == MSG_FLAGS_TYPE_BROADCAST){
-                require(bytes.size > MSG_DIRECT_MIN_LENGTH) {"Broadcast message is too small: ${bytes.size} of ${MSG_BROADCAST_MIN_LENGTH+1}"}
-            }
-            else{
-                throw Error("Unknown message type: $t")
+            when (t) {
+                MSG_FLAGS_TYPE_DIRECT ->
+                    require(bytes.size >= MSG_DIRECT_MIN_LENGTH) { "Direct message too small" }
+                MSG_FLAGS_TYPE_BROADCAST ->
+                    require(bytes.size >= MSG_BROADCAST_MIN_LENGTH) { "Broadcast message too small" }
+                MSG_FLAGS_TYPE_NODE_ADV -> {
+                    val ipv6 = (bytes[0] and MSG_FLAGS_IPV6_MASK) != 0.toByte()
+                    val expected = MSG_DETAILS_COUNTERLENGTH + (if (ipv6) 16 else 4) + 2
+                    require(bytes.size == expected) { "NodeAdv size mismatch" }
+                }
+                else -> throw IllegalArgumentException("Unknown message type: $t")
             }
             return rawMessage
         }
@@ -61,6 +64,14 @@ class RawMessage(
     }
     fun time(): Long{
         return unpackTime(fullData, MSG_TIME_OFFSET)
+    }
+    fun flags(): Byte = fullData[MSG_FLAGS_OFFSET]
+    fun details(): ByteBuffer {
+        return ByteBuffer.wrap(fullData).apply {
+            order(ByteOrder.BIG_ENDIAN)
+            position(MSG_DETAILS_OFFSET)
+            limit(fullData.size + MSG_NONCE_COUNTEROFFSET)
+        }.slice()
     }
 
     fun isGlobal(): Boolean{
@@ -78,6 +89,10 @@ class RawMessage(
     fun isValid(pow: Int): Boolean{
         Log.d("AURA_DEBUG", "Message type: ${type()}")
 
+        if(time() < System.currentTimeMillis() + 500){
+            return false;
+        }
+
         if(type() == MSG_FLAGS_TYPE_DIRECT){
             val exp = DirectMessage.expired(this, pow);
             if(exp){
@@ -86,7 +101,7 @@ class RawMessage(
             }
             return true
         }
-        else{
+        else if(type() == MSG_FLAGS_TYPE_BROADCAST){
             val exp = BroadcastMessage.expired(this,pow)
             if(exp){
                 Log.w("AURA_DEBUG", "Broadcast message expired (${pow} bits)")
@@ -99,5 +114,9 @@ class RawMessage(
             }
             return true
         }
+        else if (type() == MSG_FLAGS_TYPE_NODE_ADV){
+
+        }
+        return false
     }
 }

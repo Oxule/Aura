@@ -142,6 +142,7 @@ class MessageRegistry {
                     this.addMessage(RawMessage(msgBytes))
                 }
             }
+            clean()
             recalculate()
             Log.d("AURA_DEBUG", "Registry $fileName loaded. Root: ${rootHash.toHex()}")
         } catch (e: Exception) {
