@@ -156,37 +156,43 @@ export default function PowSubHeader({ bits, setBits, theme, profile }: {bits: n
                 }]} />
             </View>
 
-            {expanded && (
-                <View style={styles.expandedContent}>
-                    <View style={[styles.infoBlock, { alignItems: 'flex-start' }]}>
-                        <View style={{ alignItems: 'center', width: 52, marginRight: 16 }}>
-                            <View style={[styles.circleLabel, { backgroundColor: isGlobal ? theme.hard + '40' : theme.baseAccent + '40' }]}>
-                                <Text style={[styles.circleValue, { color: isGlobal ? theme.hard : theme.baseAccent }]}>{bitsState}</Text>
-                                <Text style={[styles.circleSub, { color: isGlobal ? theme.hard : theme.baseAccent }]}>{tr('pow_bits')}</Text>
+            <View style={styles.absoluteWrapper}>
+                {expanded && (
+                    <View style={[styles.expandedContent, { backgroundColor: theme.backgroundColor, borderBottomColor: theme.dim + '20' }]}>
+                        <View style={[styles.infoBlock, { alignItems: 'flex-start' }]}>
+                            <View style={{ alignItems: 'center', width: 52, marginRight: 16 }}>
+                                <View style={[styles.circleLabel, { backgroundColor: isGlobal ? theme.hard + '40' : theme.baseAccent + '40' }]}>
+                                    <Text style={[styles.circleValue, { color: isGlobal ? theme.hard : theme.baseAccent }]}>{bitsState}</Text>
+                                    <Text style={[styles.circleSub, { color: isGlobal ? theme.hard : theme.baseAccent }]}>{tr('pow_bits')}</Text>
+                                </View>
+                                <Text style={{ color: theme.dim, fontSize: 12, marginTop: 4, fontWeight: '600' }}>
+                                    ~{powTime.toFixed(1)}{tr("metric_sec_short")}
+                                </Text>
                             </View>
-                            <Text style={{ color: theme.dim, fontSize: 12, marginTop: 4, fontWeight: '600' }}>
-                                ~{powTime.toFixed(1)}{tr("metric_sec_short")}
-                            </Text>
-                        </View>
-                        <View style={styles.blockText}>
-                            <Text style={[styles.detailTitle, { color: theme.text || theme.color, marginTop: 2 }]}>{tr('pow_mode_strategy')}</Text>
-                            <Text style={[styles.detailText, { color: theme.color, marginTop: 4 }]}>
-                                {isGlobal ? tr('pow_global_desc') : tr('pow_local_desc')}
-                            </Text>
+                            <View style={styles.blockText}>
+                                <Text style={[styles.detailTitle, { color: theme.text || theme.color, marginTop: 2 }]}>{tr('pow_mode_strategy')}</Text>
+                                <Text style={[styles.detailText, { color: theme.color, marginTop: 4 }]}>
+                                    {isGlobal ? tr('pow_global_desc') : tr('pow_local_desc')}
+                                </Text>
+                            </View>
                         </View>
                     </View>
-                </View>
-            )}
+                )}
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: Spacings.major,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-  },
+    container: {
+        paddingHorizontal: Spacings.major,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+    },
+    absoluteWrapper: {
+        position: 'relative',
+        zIndex: 100,
+    },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -238,13 +244,26 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     borderWidth: 4,
     marginLeft: -13,
-    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.4,
     shadowRadius: 3,
   },
-  expandedContent: { marginTop: 8, paddingBottom: 8 },
+    expandedContent: {
+        position: 'absolute',
+        top: 0,
+        left: -Spacings.major,
+        right: -Spacings.major,
+        paddingHorizontal: Spacings.major,
+        paddingBottom: 16,
+        paddingTop: 8,
+        borderBottomWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 5,
+    },
   infoBlock: { flexDirection: 'row' },
   circleLabel: {
     width: 52,
