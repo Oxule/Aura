@@ -70,7 +70,16 @@ export default function HomeScreen() {
                     unreadCount
                 };
             })
-            .sort((a, b) => (b.lastMessage?.sent_time || 0) - (a.lastMessage?.sent_time || 0));
+            .sort((a, b) => {
+                if (a.contact.is_pinned !== b.contact.is_pinned) {
+                    return a.contact.is_pinned ? -1 : 1;
+                }
+
+                const timeA = a.lastMessage?.sent_time || 0;
+                const timeB = b.lastMessage?.sent_time || 0;
+
+                return timeB - timeA;
+            });
     }, [contacts, messages]);
 
     const renderItem = ({ item }: { item: { contact: Contact; lastMessage: Message | undefined; unreadCount: number } }) => {
@@ -110,7 +119,7 @@ export default function HomeScreen() {
                     <View style={styles.rowBetween}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                             <Text numberOfLines={1} style={[styles.contactName, { color: theme.color }]}>
-                                {type === "direct" ? "💬 " : "📣 "}{contact.name || tr("unknown")}
+                                {contact.is_pinned ? "📌 " : ""}{contact.is_muted ? "🔇" : ""}{type === "direct" ? "💬 " : "📣 "}{contact.name || tr("unknown")}
                             </Text>
                         </View>
 

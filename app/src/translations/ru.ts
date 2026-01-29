@@ -28,11 +28,15 @@ const translation = {
 
     "contact_mark_as_read": "Отметить как прочитанное",
     "contact_clear_history": "Очистить историю",
-    "contact_delete": "Удалить контакт",
+    "contact_delete": "Удалить",
     "contact_block": "Заблокировать",
     "contact_unblock": "Разблокировать",
+    "contact_mute": "Заглушить",
+    "contact_unmute": "Включить звук",
+    "contact_pin": "Закрепить",
+    "contact_unpin": "Открепить",
 
-    "contact_rename_title": "Переименовать контакт",
+    "contact_rename_title": "Переименовать",
     "contact_rename_placeholder": "Имя контакта",
 
     "chat_message_placeholder": "Сообщение",

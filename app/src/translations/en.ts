@@ -28,11 +28,15 @@ const translation = {
 
     "contact_mark_as_read": "Mark as read",
     "contact_clear_history": "Clear History",
-    "contact_delete": "Delete Contact",
-    "contact_block": "Block Contact",
-    "contact_unblock": "Unblock Contact",
+    "contact_delete": "Delete",
+    "contact_block": "Block",
+    "contact_unblock": "Unblock",
+    "contact_mute": "Mute",
+    "contact_unmute": "Unmute",
+    "contact_pin": "Pin",
+    "contact_unpin": "Unpin",
 
-    "contact_rename_title": "Rename Contact",
+    "contact_rename_title": "Rename",
     "contact_rename_placeholder": "Contact name",
 
     "chat_message_placeholder": "Message",

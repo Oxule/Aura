@@ -73,8 +73,6 @@ export default function ContactOptionsModal({
 
   const colorScheme = useColorScheme();
 
-  const [isShareVisible, setShareVisible] = useState(false);
-
   useEffect(() => {
     if (isRenameVisible)
       setNewName(displayName === tr('unknown') ? '' : displayName);
@@ -140,8 +138,34 @@ export default function ContactOptionsModal({
       onClose();
     });
   };
+
+  const handlePinContact = () => {
+    addContact({ ...contact, is_pinned: true });
+    nav.navigate('Home');
+    onClose();
+  };
+
+  const handleUnpinContact = () => {
+    addContact({ ...contact, is_pinned: false });
+    nav.navigate('Home');
+    onClose();
+  };
+
+  const handleMuteContact = () => {
+    addContact({ ...contact, is_muted: true });
+    nav.navigate('Home');
+    onClose();
+  };
+
+  const handleUnmuteContact = () => {
+    addContact({ ...contact, is_muted: false });
+    nav.navigate('Home');
+    onClose();
+  };
+
   const handleUnblockContact = () => {
     addContact({ ...contact, is_blocked: false });
+    nav.navigate('Home');
     onClose();
   };
 
@@ -198,6 +222,22 @@ export default function ContactOptionsModal({
         {
           title: tr('rename'),
           action: () => setRenameVisible(true),
+        },
+        {
+          title: contact.is_pinned
+              ? tr('contact_unpin')
+              : tr('contact_pin'),
+          action: contact.is_pinned
+              ? handleUnpinContact
+              : handlePinContact,
+        },
+        {
+          title: contact.is_muted
+              ? tr('contact_unmute')
+              : tr('contact_mute'),
+          action: contact.is_muted
+              ? handleUnmuteContact
+              : handleMuteContact,
         },
         /*{
                   title: tr('share'),
