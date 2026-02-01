@@ -13,12 +13,11 @@ import {
     Vibration,
     Animated, NativeModules,
 } from 'react-native';
-import QRCode from "react-native-qrcode-svg";
 import React, { useEffect, useState } from "react";
 import useATheme, { Spacings, style_dim, style_h3 } from "../theme.ts";
 import {useIsFocused, useNavigation} from "@react-navigation/core";
 import { Nav } from "../../App.tsx";
-import {DEEPLINK_PREFIX, process_user_deeplink} from "../deeplink.ts";
+import {DEEPLINK_PREFIX} from "../deeplink.ts";
 import {useAtom} from "jotai/react";
 import {useTranslation} from "../translations/translations.ts";
 import Header from "../components/Header.tsx";
@@ -26,31 +25,9 @@ import {defaultContact, useContacts} from "../storage/contacts.ts";
 import {channelsAtom} from "../storage/channels.ts";
 import {targetBits} from "../components/PowSubHeader.tsx";
 import {ScannerView} from "../components/ScannerView.tsx";
+import {ContactData, ContactLink} from "../ContactLink.ts";
 
 const { Aura } = NativeModules;
-
-function validateLink(link):string|undefined {
-    if (!link || !link.startsWith(DEEPLINK_PREFIX)) {
-        return undefined;
-    }
-
-    const key = link.slice(DEEPLINK_PREFIX.length);
-
-    const firstChar = key[0];
-    if (firstChar !== '0' && firstChar !== '1') {
-        return undefined;
-    }
-
-    const base64Part = key.slice(1);
-
-    const base64Regex = /^[A-Za-z0-9+/]{42,43}={0,2}$/;
-
-    if (base64Part.length >= 43 && base64Part.length <= 44 && base64Regex.test(base64Part)) {
-        return key;
-    }
-
-    return undefined;
-}
 
 export default function AddScreen() {
     const [tr] = useTranslation();
@@ -60,15 +37,15 @@ export default function AddScreen() {
     const [_, setChannels] = useAtom(channelsAtom);
 
     const isFocused = useIsFocused();
-    const [validKeyFromClipboard, setValidKeyFromClipboard] = useState<string | null>(null);
+    const [validKeyFromClipboard, setValidKeyFromClipboard] = useState<ContactData | null>(null);
 
     const [scanned, setScanned] = useState(false);
 
     useEffect(() => {
         Clipboard.getString().then(x=>{
-            const pubkey = validateLink(x)
-            if(pubkey){
-                setValidKeyFromClipboard(pubkey)
+            const linkInfo = ContactLink.parse(x)
+            if(linkInfo){
+                setValidKeyFromClipboard(linkInfo)
             }
             else{
                 setValidKeyFromClipboard(null)
@@ -76,20 +53,25 @@ export default function AddScreen() {
         })
     }, [isFocused]);
 
-    const handleAction = (userKey: string) => {
-        if (!contacts[userKey]) {
-            addContact(defaultContact(userKey, tr));
+    const handleAction = (info: ContactData) => {
+        if (!contacts[info.pubkey]) {
+            if(info.name) {
+                addContact({...defaultContact(info.pubkey, tr), name: info.name});
+            }
+            else{
+                addContact(defaultContact(info.pubkey, tr));
+            }
         }
-        nav.navigate("Chat", { publicKey: userKey });
+        nav.navigate("Chat", { publicKey: info.pubkey });
     };
 
     const onCodeScanned = (value: string) => {
         if (scanned) return;
-        const pubkey = validateLink(value);
-        if(pubkey){
+        const linkInfo = ContactLink.parse(value);
+        if(linkInfo){
             setScanned(true);
             Vibration.vibrate(10);
-            handleAction(pubkey);
+            handleAction(linkInfo);
         }
     };
 

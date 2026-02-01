@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   SafeAreaView,
   Text,
   TouchableOpacity,
@@ -15,7 +13,6 @@ import useATheme, { style_dim } from '../../theme.ts';
 import { useNavigation } from '@react-navigation/core';
 import { useAtom } from 'jotai/react';
 import useKeys from '../../useKeys.ts';
-import ContactOptionsModal from '../../components/ContactOptionsModal.tsx';
 import Header from '../../components/Header.tsx';
 import PowSubHeader from '../../components/PowSubHeader.tsx';
 import { useContacts } from '../../storage/contacts.ts';
@@ -29,10 +26,9 @@ import Send from './Send.tsx';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   KeyboardAwareScrollView,
-  KeyboardControllerView,
   KeyboardStickyView,
-  OverKeyboardView
 } from 'react-native-keyboard-controller';
+import ContactModal from "../../components/ContactModal.tsx";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -89,11 +85,10 @@ export default function ChatScreen({ route }: Props) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
-      <ContactOptionsModal
-        isVisible={isOptionsVisible}
+      <ContactModal
+        visible={isOptionsVisible}
         onClose={() => setOptionsVisible(false)}
-        publicKey={route.params.publicKey}
-        showMarkRead={false}
+        pubkey={route.params.publicKey}
       />
 
       <Header>

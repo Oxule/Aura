@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { useNavigation } from "@react-navigation/core";
 import { Nav } from "../../App.tsx";
-import { useAtom } from "jotai/react";
 import useATheme, { style_dim } from "../theme.ts";
 import useKeys from "../useKeys.ts";
 import { useTranslation } from "../translations/translations.ts";
@@ -19,10 +18,9 @@ import Header from "../components/Header.tsx";
 import { Contact, contactsAtom, useContacts } from "../storage/contacts.ts";
 import { Message, messagesAtom, useMessages } from "../storage/messages.ts";
 import { fromUtf8 } from "../utils.ts";
-import ContactOptionsModal from "../components/ContactOptionsModal.tsx";
-import {channelsAtom} from "../storage/channels.ts";
 import Aura from "../components/Aura.tsx";
-import ProfileModal from "../components/ProfileModal.tsx";
+import ContactModal from "../components/ContactModal.tsx";
+import {Megaphone, MessageCircleMore, Pin, Settings, VolumeOff} from "lucide-react-native";
 
 export function parsePubkey(pubkey: string): { publicKey: string, type: "direct" | "broadcast" } {
     return {
@@ -41,7 +39,8 @@ export default function HomeScreen() {
 
     const [messages] = useMessages();
 
-    const [isMenuVisible, setMenuVisible] = useState(false);
+    const {pub: userPubkey} = useKeys();
+
     const [selectedContactKey, setSelectedContactKey] = useState<string | null>(null);
 
     const colorScheme = useColorScheme()
@@ -118,8 +117,11 @@ export default function HomeScreen() {
                     <View style={styles.contactInfo}>
                     <View style={styles.rowBetween}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            {type === "direct" ? <MessageCircleMore style={{color: theme.color, marginRight: 8 }}/> : <Megaphone style={{color: theme.color, marginRight: 8 }}/>}
+                            {contact.is_pinned && <Pin style={{color: theme.color, marginRight: 8 }}/>}
+                            {contact.is_muted && <VolumeOff style={{color: theme.color, marginRight: 8 }}/>}
                             <Text numberOfLines={1} style={[styles.contactName, { color: theme.color }]}>
-                                {contact.is_pinned ? "📌 " : ""}{contact.is_muted ? "🔇" : ""}{type === "direct" ? "💬 " : "📣 "}{contact.name || tr("unknown")}
+                                {contact.name || tr("unknown")}
                             </Text>
                         </View>
 
@@ -157,14 +159,13 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
-            <ContactOptionsModal publicKey={selectedContactKey ?? ""} isVisible={selectedContactKey!==null} onClose={()=>setSelectedContactKey(null)} showMarkRead={true}/>
-            <ProfileModal isMenuVisible={isMenuVisible} setMenuVisible={setMenuVisible}/>
+            <ContactModal pubkey={selectedContactKey} visible={selectedContactKey!==null} onClose={()=>setSelectedContactKey(null)}/>
 
-            <Header
-                left={<TouchableOpacity hitSlop={32} onPress={() => nav.navigate("Settings")}><Text style={{ color: theme.color, fontSize: 24 }}>⚙</Text></TouchableOpacity>}
+            {/*@ts-ignore*/}
+            <Header left={<TouchableOpacity hitSlop={32} onPress={() => nav.navigate("Settings")}><Settings style={{ color: theme.color, fontSize: 28 }}/></TouchableOpacity>}
                 right={<TouchableOpacity hitSlop={32} onPress={() => nav.navigate("Add")}><Text style={{ color: theme.accent, fontSize: 28 }}>＋</Text></TouchableOpacity>}
             >
-                <TouchableOpacity hitSlop={32} onPress={() => setMenuVisible(true)}>
+                <TouchableOpacity hitSlop={32} onPress={() => setSelectedContactKey("0"+userPubkey)}>
                     <View style={{display: "flex", flexDirection: "row", alignItems: "center", gap: 8}}>
                         <Aura theme={colorScheme} size={64} publicKey={"0"+pub} />
                         <View>
