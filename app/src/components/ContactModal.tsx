@@ -28,15 +28,37 @@ import {channelsAtom} from "../storage/channels.ts";
 import {useNavigation} from "@react-navigation/core";
 import {Nav} from "../../App.tsx";
 
-export function confirmAlert(tr: TranslateFunction, onConfirm: () => void) {
-  Alert.alert(tr('alert_confirm_title'), tr('alert_confirm_text'), [
-    { text: tr('no'), style: 'cancel' },
-    {
-      text: tr('yes'),
-      style: 'destructive',
-      onPress: onConfirm,
-    },
-  ]);
+function ConfirmModal({ visible, title, text, onConfirm, onClose, accent, theme, tr }) {
+  return (
+      <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.confirmContent, { backgroundColor: theme.backgroundColor, borderColor: theme.dim + '30', borderWidth: 1 }]}>
+                <Text style={[styles.confirmTitle, { color: theme.color }]}>{title}</Text>
+                <Text style={[styles.confirmText, { color: theme.dim }]}>{text}</Text>
+
+                <View style={styles.confirmButtons}>
+                  <TouchableOpacity
+                      style={[styles.confirmBtn, { backgroundColor: theme.dim + '15' }]}
+                      onPress={onClose}
+                  >
+                    <Text style={{ color: theme.color, fontWeight: '600' }}>{tr('no')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                      style={[styles.confirmBtn, { backgroundColor: '#da2323' }]}
+                      onPress={() => { onConfirm(); onClose(); }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>{tr('yes')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+  );
 }
 
 export default function ContactModal({ pubkey, visible, onClose }) {
@@ -56,29 +78,33 @@ export default function ContactModal({ pubkey, visible, onClose }) {
   const [, setChannels] = useAtom(channelsAtom);
   const [, messages_dispatch] = useAtom(messagesAtom);
 
-  const handleResetAccount = () => {
-    confirmAlert(tr, () => {
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
+  const triggerConfirm = (actionType) => {
+    setPendingAction(actionType);
+    setConfirmVisible(true);
+  };
+
+  const handleConfirmAction = () => {
+    if (pendingAction === 'reset') {
       regenerate();
       messages_dispatch({ type: "wipe" });
       contacts_dispatch({ action: "clear" });
       setChannels({});
       onClose();
-      nav.navigate("Home")
-    });
-  };
-
-  const handleDeleteContact = () => {
-    confirmAlert(tr, () => {
+      nav.navigate("Home");
+    } else if (pendingAction === 'delete') {
       messages_dispatch({ type: "delete", payload: {all: true, contact: pubkey}});
       contacts_dispatch({ action: "delete", payload: pubkey });
-      setChannels(x=>{
-        var n = x;
-        delete n[pubkey]
-        return n
+      setChannels(x => {
+        const n = { ...x };
+        delete n[pubkey];
+        return n;
       });
       onClose();
-      nav.navigate("Home")
-    });
+      nav.navigate("Home");
+    }
   };
   
   if (pubkey === undefined) return null;
@@ -260,12 +286,7 @@ export default function ContactModal({ pubkey, visible, onClose }) {
 
               <View style={{display: "flex", flexDirection: "column", gap: 8, marginTop: 64, width: "100%", alignItems: "center"}}>
                 <TouchableOpacity style={{backgroundColor: "#da2323", padding: 12, borderRadius: 18, width: "80%"}} onPress={()=>{
-                  if(personal) {
-                    handleResetAccount()
-                  }
-                  else {
-                    handleDeleteContact()
-                  }
+                  triggerConfirm(personal ? 'reset' : 'delete')
                 }}>
                   <Text style={{fontSize: 18, fontWeight: "bold", textAlign: "center"}}>{personal?tr("accopts_reset"):tr("contact_delete")}</Text>
                 </TouchableOpacity>
@@ -280,6 +301,16 @@ export default function ContactModal({ pubkey, visible, onClose }) {
         accent={accent}
         onClose={() => setRenameVisible(false)}
         onSave={handleUpdateName}
+      />
+      <ConfirmModal
+          visible={confirmVisible}
+          title={tr('alert_confirm_title')}
+          text={tr('alert_confirm_text')}
+          onConfirm={handleConfirmAction}
+          onClose={() => setConfirmVisible(false)}
+          accent={accent}
+          theme={theme}
+          tr={tr}
       />
     </Modal>
   );
@@ -334,5 +365,36 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 18
+  },
+  confirmContent: {
+    width: '80%',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 25,
+  },
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  confirmBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   }
 });
