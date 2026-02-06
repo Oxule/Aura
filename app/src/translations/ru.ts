@@ -64,7 +64,10 @@ const translation = {
 
     "permissions_beg": "Для работы AURA Mesh требуются все разрешения, чтобы поддерживать соединение и искать узлы",
     "permissions_perma": "Некоторые разрешения навсегда отклонены. Пожалуйста, включите их вручную в настройках системы.",
-    "permissions_settings": "Открыть настройки системы"
+    "permissions_settings": "Открыть настройки системы",
+
+    "share_cap": "Свяжись с",
+    "share_cap_me": "Свяжись со мной"
 } as const
 
 export default translation

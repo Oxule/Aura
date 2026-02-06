@@ -136,7 +136,7 @@ export default function ContactModal({ pubkey, visible, onClose }) {
       //@ts-ignore
       const uri = await viewShotRef.current.capture();
       await Share.open({
-        message: `Connect with ${contact.name}: ${link}`,
+        message: (personal ? tr("share_cap_me") : tr("share_cap") + ` ${contact.name}`) + ": " + link,
         url: uri,
         type: 'image/png',
         failOnCancel: false,

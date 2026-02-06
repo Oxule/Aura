@@ -64,7 +64,10 @@ const translation = {
 
     "permissions_beg": "AURA Mesh requires all permissions to stay alive and discover nodes",
     "permissions_perma": "Some permissions are permanently denied. Please enable them manually in settings to continue.",
-    "permissions_settings": "Open System Settings"
+    "permissions_settings": "Open System Settings",
+
+    "share_cap": "Connect with",
+    "share_cap_me": "Connect with me"
 } as const
 
 export default translation
